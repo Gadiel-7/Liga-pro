@@ -1,0 +1,10 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-*: initial;
+}
+
+/* Habilita el modo oscuro basado en la clase .dark */
+.dark {
+  color-scheme: dark;
+}
