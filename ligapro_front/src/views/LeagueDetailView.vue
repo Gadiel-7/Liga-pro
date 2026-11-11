@@ -1,3 +1,4 @@
+<!-- eslint-disable @typescript-eslint/no-explicit-any -->
 <template>
   <DashboardLayout>
     <div class="mb-6">
@@ -58,14 +59,25 @@
           </div>
         </div>
 
-        <!-- Botón de registrar equipo (solo visible en la pestaña de equipos) -->
-        <button
-          v-if="activeTab === 'equipos'"
-          @click="showTeamModal = true"
-          class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-5 py-2.5 rounded-xl shadow-sm text-sm transition-all shrink-0"
-        >
-          + Registrar Nuevo Equipo
-        </button>
+        <!-- Acciones del Encabezado -->
+        <div class="flex items-center gap-3">
+          <!-- Botón Editar Liga -->
+          <button
+            @click="showEditLeagueModal = true"
+            class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold px-4 py-2.5 rounded-xl text-sm transition-all shrink-0 cursor-pointer flex items-center gap-1.5"
+          >
+            <span>⚙️</span> Editar Liga
+          </button>
+
+          <!-- Botón de registrar equipo (solo visible en la pestaña de equipos) -->
+          <button
+            v-if="activeTab === 'equipos'"
+            @click="showTeamModal = true"
+            class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-5 py-2.5 rounded-xl shadow-sm text-sm transition-all shrink-0 cursor-pointer"
+          >
+            + Registrar Nuevo Equipo
+          </button>
+        </div>
       </header>
 
       <!-- MENÚ DE PESTAÑAS (TABS) -->
@@ -77,7 +89,7 @@
               ? 'border-indigo-600 text-indigo-600'
               : 'border-transparent text-slate-500 hover:text-slate-700'
           "
-          class="pb-3 border-b-2 font-medium text-sm whitespace-nowrap transition-colors"
+          class="pb-3 border-b-2 font-medium text-sm whitespace-nowrap transition-colors cursor-pointer"
         >
           Equipos
         </button>
@@ -89,7 +101,7 @@
               ? 'border-indigo-600 text-indigo-600'
               : 'border-transparent text-slate-500 hover:text-slate-700'
           "
-          class="pb-3 border-b-2 font-medium text-sm whitespace-nowrap transition-colors"
+          class="pb-3 border-b-2 font-medium text-sm whitespace-nowrap transition-colors cursor-pointer"
         >
           Partidos
         </button>
@@ -102,7 +114,7 @@
               ? 'border-indigo-600 text-indigo-600'
               : 'border-transparent text-slate-500 hover:text-slate-700'
           "
-          class="pb-3 border-b-2 font-medium text-sm whitespace-nowrap transition-colors"
+          class="pb-3 border-b-2 font-medium text-sm whitespace-nowrap transition-colors cursor-pointer"
         >
           Clasificación
         </button>
@@ -115,7 +127,7 @@
               ? 'border-indigo-600 text-indigo-600'
               : 'border-transparent text-slate-500 hover:text-slate-700'
           "
-          class="pb-3 border-b-2 font-medium text-sm whitespace-nowrap transition-colors"
+          class="pb-3 border-b-2 font-medium text-sm whitespace-nowrap transition-colors cursor-pointer"
         >
           Estadísticas
         </button>
@@ -127,7 +139,7 @@
               ? 'border-indigo-600 text-indigo-600'
               : 'border-transparent text-slate-500 hover:text-slate-700'
           "
-          class="pb-3 border-b-2 font-medium text-sm whitespace-nowrap transition-colors"
+          class="pb-3 border-b-2 font-medium text-sm whitespace-nowrap transition-colors cursor-pointer"
         >
           Resumen
         </button>
@@ -154,7 +166,7 @@
           </p>
           <button
             @click="showTeamModal = true"
-            class="bg-indigo-600 text-white font-semibold px-4 py-2 rounded-lg text-sm hover:bg-indigo-700 transition-colors"
+            class="bg-indigo-600 text-white font-semibold px-4 py-2 rounded-lg text-sm hover:bg-indigo-700 transition-colors cursor-pointer"
           >
             Agregar el primer equipo
           </button>
@@ -164,31 +176,45 @@
           <div
             v-for="equipo in equipos"
             :key="equipo.id"
-            @click="$router.push(`/teams/${equipo.id}`)"
-            class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm hover:shadow-md hover:border-indigo-300 transition-all cursor-pointer flex items-center gap-4"
+            class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm hover:shadow-md hover:border-indigo-300 transition-all flex items-center justify-between gap-4"
           >
+            <!-- Contenedor con clic para ver detalles del equipo -->
             <div
-              class="w-16 h-16 bg-indigo-50 border border-indigo-100 rounded-2xl flex items-center justify-center text-indigo-600 font-black text-xl shrink-0 overflow-hidden shadow-2xs"
+              @click="$router.push(`/teams/${equipo.id}`)"
+              class="flex items-center gap-4 cursor-pointer flex-1 overflow-hidden"
             >
-              <img
-                v-if="equipo.logo"
-                :src="getImageUrl(equipo.logo)"
-                class="w-full h-full object-cover"
-                @error="(e: Event) => ((e.target as HTMLImageElement).style.display = 'none')"
-              />
-              <span v-else>{{
-                (equipo.nombre || equipo.name || 'E').charAt(0).toUpperCase()
-              }}</span>
+              <div
+                class="w-16 h-16 bg-indigo-50 border border-indigo-100 rounded-2xl flex items-center justify-center text-indigo-600 font-black text-xl shrink-0 overflow-hidden shadow-2xs"
+              >
+                <img
+                  v-if="equipo.logo"
+                  :src="getImageUrl(equipo.logo)"
+                  class="w-full h-full object-cover"
+                  @error="(e: Event) => ((e.target as HTMLImageElement).style.display = 'none')"
+                />
+                <span v-else>{{
+                  (equipo.nombre || equipo.name || 'E').charAt(0).toUpperCase()
+                }}</span>
+              </div>
+
+              <div class="overflow-hidden">
+                <h3 class="font-bold text-slate-900 text-lg truncate">
+                  {{ equipo.nombre || equipo.name }}
+                </h3>
+                <p v-if="equipo.location" class="text-xs text-slate-500 truncate mt-1">
+                  📍 {{ equipo.location }}
+                </p>
+              </div>
             </div>
 
-            <div class="overflow-hidden">
-              <h3 class="font-bold text-slate-900 text-lg truncate">
-                {{ equipo.nombre || equipo.name }}
-              </h3>
-              <p v-if="equipo.location" class="text-xs text-slate-500 truncate mt-1">
-                📍 {{ equipo.location }}
-              </p>
-            </div>
+            <!-- Botón para editar equipo -->
+            <button
+              @click.stop="openEditTeam(equipo.id)"
+              class="p-2.5 rounded-xl bg-slate-100 hover:bg-indigo-50 text-slate-600 hover:text-indigo-600 transition-colors cursor-pointer shrink-0"
+              title="Editar Equipo"
+            >
+              ✏️
+            </button>
           </div>
         </div>
       </div>
@@ -213,6 +239,22 @@
         <OverView :league-id="leagueId" />
       </div>
     </div>
+
+    <!-- MODAL: EDITAR LIGA -->
+    <EditLeagueModal
+      v-if="showEditLeagueModal"
+      :league-id="leagueId!"
+      @close="showEditLeagueModal = false"
+      @updated="fetchLeagueDetails"
+    />
+
+    <!-- MODAL: EDITAR EQUIPO -->
+    <EditTeamModal
+      v-if="showEditTeamModal && editingTeamId"
+      :team-id="editingTeamId"
+      @close="showEditTeamModal = false"
+      @updated="handleTeamUpdated"
+    />
 
     <!-- MODAL: REGISTRAR EQUIPO -->
     <CreateTeamModal
@@ -241,6 +283,8 @@ import api from '../services/api'
 import DashboardLayout from './components/modals/DashboardLayout.vue'
 import CreateTeamModal from './components/modals/CreateTeamModal.vue'
 import AddPlayerModal from './components/modals/AddPlayerModal.vue'
+import EditLeagueModal from './components/modals/EditLeagueModal.vue'
+import EditTeamModal from './components/modals/EditTeamModal.vue'
 import MatchesView from './MatchesView.vue'
 import StandingsView from './StandingsView.vue'
 import StatisticsView from './StatisticsView.vue'
@@ -254,12 +298,18 @@ const leagueId = computed(() => {
 
 const activeTab = ref('equipos')
 const showTeamModal = ref(false)
+const showEditLeagueModal = ref(false)
+
+const showEditTeamModal = ref(false)
+const editingTeamId = ref<number | null>(null)
 
 const showPlayerModal = ref(false)
 const selectedTeamId = ref<number | null>(null)
 const selectedTeamName = ref('')
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const liga = ref<any>(null)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const equipos = ref<any[]>([])
 const loading = ref<boolean>(true)
 const error = ref<string | null>(null)
@@ -283,12 +333,24 @@ const fetchLeagueDetails = async () => {
     liga.value = res.liga || res.league || res.data || res
     equipos.value =
       res.equipos || res.teams || res.liga?.equipos || res.league?.teams || res.data?.equipos || []
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (err: any) {
     console.error('Error al consultar la liga:', err)
     error.value = 'Error al consultar la liga.'
   } finally {
     loading.value = false
   }
+}
+
+const openEditTeam = (teamId: number) => {
+  editingTeamId.value = teamId
+  showEditTeamModal.value = true
+}
+
+const handleTeamUpdated = () => {
+  showEditTeamModal.value = false
+  editingTeamId.value = null
+  fetchLeagueDetails()
 }
 
 const handleTeamCreated = () => {

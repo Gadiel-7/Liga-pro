@@ -13,14 +13,10 @@ class AuthController extends Controller
     public function register(Request $request)
     {
         $request->validate([
-       'name' => 'required|string|max:255',
-       'email' => 'required|string|email|max:255|unique:users',
-       'password' => 'required|string|min:6',
-       'role' => 'required|in:admin,representante,aficionado', 
-        ]);
-
-        $request->merge([
-            'password' => Hash::make($request->password),
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users',
+            'password' => 'required|string|min:6',
+            'role' => 'nullable|in:admin,representante,aficionado',
         ]);
 
         $user = User::create([
@@ -30,12 +26,10 @@ class AuthController extends Controller
             'role' => $request->role ?? 'aficionado',
         ]);
 
-        $token = $user->createToken('auth_token')->plainTextToken;
+        event(new \Illuminate\Auth\Events\Registered($user));
 
         return response()->json([
-            'message' => 'Usuario registrado exitosamente',
-            'access_token' => $token,
-            'token_type' => 'Bearer',
+            'message' => 'Usuario registrado exitosamente. Por favor verifica tu correo electrónico antes de iniciar sesión.',
             'user' => $user
         ], 201);
     }
@@ -55,6 +49,13 @@ class AuthController extends Controller
             ]);
         }
 
+        if (! $user->hasVerifiedEmail()) {
+            return response()->json([
+                'message' => 'Debes verificar tu correo electrónico para poder acceder.',
+                'email_verified' => false
+            ], 403);
+        }
+
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
@@ -62,6 +63,47 @@ class AuthController extends Controller
             'access_token' => $token,
             'token_type' => 'Bearer',
             'user' => $user
+        ]);
+    }
+
+    // Método optimizado para asegurar el guardado de la fecha de verificación
+    public function verifyEmail(Request $request, $id)
+    {
+        $user = User::find($id);
+
+        if (! $user) {
+            return response()->json([
+                'message' => 'Usuario no encontrado.'
+            ], 404);
+        }
+
+        if ($user->hasVerifiedEmail()) {
+            return response()->json([
+                'message' => 'El correo electrónico ya ha sido verificado previamente.'
+            ]);
+        }
+
+        // Fuerza de manera directa la escritura de la fecha en la base de datos
+        $user->markEmailAsVerified();
+        event(new \Illuminate\Auth\Events\Verified($user));
+
+        return response()->json([
+            'message' => '¡Correo electrónico verificado exitosamente!'
+        ]);
+    }
+
+    public function resendVerificationEmail(Request $request)
+    {
+        if ($request->user()->hasVerifiedEmail()) {
+            return response()->json([
+                'message' => 'El correo electrónico ya ha sido verificado.'
+            ], 400);
+        }
+
+        $request->user()->sendEmailVerificationNotification();
+
+        return response()->json([
+            'message' => 'Se ha reenviado el enlace de verificación a tu correo.'
         ]);
     }
 

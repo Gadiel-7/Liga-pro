@@ -18,6 +18,14 @@
         </button>
       </form>
 
+      <div v-if="needsVerification" class="verification-box">
+        <p>⚠️ Tu correo electrónico aún no ha sido verificado.</p>
+        <button @click="resendVerification" :disabled="resending" class="btn-secondary">
+          {{ resending ? 'Enviando...' : 'Reenviar correo de verificación' }}
+        </button>
+        <p v-if="resendMessage" class="success-small">{{ resendMessage }}</p>
+      </div>
+
       <p v-if="errorMessage" class="error">{{ errorMessage }}</p>
 
       <p class="switch-link">
@@ -36,11 +44,16 @@ const router = useRouter()
 const email = ref('')
 const password = ref('')
 const errorMessage = ref('')
+const resendMessage = ref('')
 const loading = ref(false)
+const resending = ref(false)
+const needsVerification = ref(false)
 
 const handleLogin = async () => {
   loading.value = true
   errorMessage.value = ''
+  needsVerification.value = false
+  resendMessage.value = ''
 
   try {
     const response = await api.post('/login', {
@@ -48,13 +61,49 @@ const handleLogin = async () => {
       password: password.value,
     })
 
+    // Limpiamos datos anteriores para evitar conflictos de sesión
+    localStorage.removeItem('auth_token')
+    localStorage.removeItem('user')
+
+    // Guardamos el nuevo token y los datos del usuario real (incluyendo su rol)
     localStorage.setItem('auth_token', response.data.access_token)
-    router.push('/dashboard')
-  } catch (error: unknown) {
-    const response = (error as { response?: { data?: { message?: string } } }).response
-    errorMessage.value = response?.data?.message || 'Credenciales incorrectas o error de conexión'
+    localStorage.setItem('user', JSON.stringify(response.data.user))
+
+    const user = response.data.user
+
+    // Redirección inteligente basada en el rol del usuario
+    if (user.role === 'admin') {
+      router.push('/leagues')
+    } else {
+      router.push('/explorer')
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (error: any) {
+    const status = error.response?.status
+    const data = error.response?.data
+
+    if (status === 403 && data?.email_verified === false) {
+      needsVerification.value = true
+      errorMessage.value = data.message
+    } else {
+      errorMessage.value = data?.message || 'Credenciales incorrectas o error de conexión'
+    }
   } finally {
     loading.value = false
+  }
+}
+
+const resendVerification = async () => {
+  resending.value = true
+  resendMessage.value = ''
+  try {
+    await api.post('/email/resend', { email: email.value })
+    resendMessage.value = '¡Correo de verificación reenviado! Revisa tu bandeja.'
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (error: any) {
+    errorMessage.value = error.response?.data?.message || 'No se pudo reenviar el correo.'
+  } finally {
+    resending.value = false
   }
 }
 </script>
@@ -98,7 +147,8 @@ const handleLogin = async () => {
   color: #475569;
   font-size: 14px;
 }
-.form-group input {
+.form-group input,
+.form-select {
   width: 100%;
   padding: 12px;
   border: 1px solid #cbd5e1;
@@ -133,11 +183,42 @@ const handleLogin = async () => {
   background-color: #93c5fd;
   cursor: not-allowed;
 }
+.btn-secondary {
+  width: 100%;
+  padding: 10px;
+  background-color: #e2e8f0;
+  color: #334155;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: background-color 0.2s;
+}
+.btn-secondary:hover {
+  background-color: #cbd5e1;
+}
+.verification-box {
+  margin-top: 16px;
+  padding: 12px;
+  background-color: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #92400e;
+  text-align: center;
+}
 .error {
   color: #dc2626;
   margin-top: 14px;
   font-size: 14px;
   text-align: center;
+}
+.success-small {
+  color: #16a34a;
+  margin-top: 6px;
+  font-size: 12px;
 }
 .switch-link {
   margin-top: 24px;

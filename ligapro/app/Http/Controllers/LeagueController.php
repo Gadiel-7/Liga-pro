@@ -14,7 +14,7 @@ class LeagueController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $userId = auth()->id();
+        $userId = $request->user()?->id;
 
         $query = League::with(['categories', 'teams.players']);
 

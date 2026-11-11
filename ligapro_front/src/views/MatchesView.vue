@@ -22,24 +22,33 @@
         <p
           class="text-slate-500 dark:text-slate-400 text-base mt-2 max-w-2xl font-normal leading-relaxed"
         >
-          Genera automáticamente el rol de juegos, programa sedes, horarios y administra los
-          marcadores por jornada con precisión quirúrgica.
+          Registra manualmente los partidos de la Jornada 1 y genera automáticamente el resto del
+          rol de juegos a partir de la Jornada 2.
         </p>
       </div>
 
-      <!-- BOTÓN DE ACCIÓN PRINCIPAL PREMIUM -->
-      <button
-        @click="generateMatches"
-        :disabled="generating"
-        class="inline-flex items-center justify-center gap-2.5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold px-7 py-4 rounded-2xl shadow-xl shadow-slate-900/10 dark:shadow-white/5 hover:bg-indigo-600 dark:hover:bg-indigo-50 dark:hover:text-indigo-600 hover:shadow-indigo-500/25 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 text-sm shrink-0 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        <span
-          v-if="generating"
-          class="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"
-        ></span>
-        <span v-else class="text-lg">⚡</span>
-        {{ generating ? 'Generando Rol...' : 'Generar Rol de Partidos' }}
-      </button>
+      <!-- BOTONES DE ACCIÓN PRINCIPAL -->
+      <div class="flex items-center gap-3 flex-wrap">
+        <button
+          @click="showCreateManualMatchModal = true"
+          class="inline-flex items-center justify-center gap-2 bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 font-bold px-5 py-4 rounded-2xl border border-indigo-200 dark:border-indigo-900 hover:bg-indigo-100 transition-all text-sm shrink-0 cursor-pointer"
+        >
+          <span>➕</span> Registrar Partido Manual
+        </button>
+
+        <button
+          @click="generateMatches"
+          :disabled="generating"
+          class="inline-flex items-center justify-center gap-2.5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold px-7 py-4 rounded-2xl shadow-xl shadow-slate-900/10 dark:shadow-white/5 hover:bg-indigo-600 dark:hover:bg-indigo-50 dark:hover:text-indigo-600 hover:shadow-indigo-500/25 transition-all text-sm shrink-0 cursor-pointer disabled:opacity-50"
+        >
+          <span
+            v-if="generating"
+            class="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"
+          ></span>
+          <span v-else class="text-lg">⚡</span>
+          {{ generating ? 'Generando...' : 'Generar Rol Automático (J2+)' }}
+        </button>
+      </div>
     </div>
 
     <!-- ESTADO DE CARGA -->
@@ -63,21 +72,14 @@
         ⚽
       </div>
       <h3 class="text-2xl font-extrabold text-slate-900 dark:text-white mb-3">
-        Aún no hay rol de juegos
+        Aún no hay partidos programados
       </h3>
       <p
         class="text-slate-500 dark:text-slate-400 text-base max-w-md mx-auto mb-8 font-normal leading-relaxed"
       >
-        Haz clic en el botón superior para generar automáticamente las jornadas y los
-        enfrentamientos entre los equipos registrados.
+        Comienza registrando manualmente los encuentros de la Jornada 1 o genera el rol automático a
+        partir de la Jornada 2.
       </p>
-      <button
-        @click="generateMatches"
-        :disabled="generating"
-        class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-8 py-4 rounded-2xl text-sm transition-all shadow-lg shadow-indigo-600/30 cursor-pointer disabled:opacity-50"
-      >
-        Generar Rol Ahora
-      </button>
     </div>
 
     <!-- LISTADO DE JORNADAS Y PARTIDOS -->
@@ -89,7 +91,7 @@
       >
         <!-- Encabezado de la Jornada -->
         <div
-          class="flex items-center justify-between mb-6 pb-4 border-b border-slate-100 dark:border-slate-800/80"
+          class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 pb-4 border-b border-slate-100 dark:border-slate-800/80"
         >
           <div class="flex items-center gap-3">
             <div
@@ -101,11 +103,21 @@
               Jornada {{ round.jornada || index + 1 }}
             </h4>
           </div>
-          <span
-            class="px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-xs font-bold uppercase tracking-wider"
-          >
-            {{ round.matches?.length ?? 0 }} partidos programados
-          </span>
+
+          <div class="flex items-center gap-3 flex-wrap">
+            <span
+              v-if="round.restingTeam"
+              class="px-3.5 py-1 rounded-full bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 text-xs font-bold border border-amber-200 dark:border-amber-900 flex items-center gap-1.5"
+            >
+              <span>💤</span> Descansa: {{ round.restingTeam.name }}
+            </span>
+
+            <span
+              class="px-3.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-xs font-bold uppercase tracking-wider"
+            >
+              {{ round.matches?.length ?? 0 }} partidos
+            </span>
+          </div>
         </div>
 
         <!-- Grid de Partidos -->
@@ -113,19 +125,18 @@
           <div
             v-for="match in round.matches || []"
             :key="match.id"
-            class="group bg-slate-50/80 dark:bg-slate-950/50 border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-5 flex flex-col justify-between gap-4 hover:border-indigo-500/50 dark:hover:border-indigo-500/50 transition-all shadow-2xs"
+            class="group bg-slate-50/80 dark:bg-slate-950/50 border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-5 flex flex-col justify-between gap-4 hover:border-indigo-500/50 transition-all shadow-2xs"
           >
-            <!-- Fila superior: Equipos y Marcador -->
             <div class="flex items-center justify-between gap-3">
               <!-- Equipo Local -->
               <div class="flex items-center gap-3 flex-1 justify-end overflow-hidden">
                 <span
-                  class="font-bold text-slate-800 dark:text-slate-200 truncate text-right text-sm group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors"
+                  class="font-bold text-slate-800 dark:text-slate-200 truncate text-right text-sm group-hover:text-indigo-600 transition-colors"
                 >
                   {{ match.team_a?.name || match.team_a?.nombre || 'Local' }}
                 </span>
                 <div
-                  class="w-10 h-10 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-center font-bold text-xs text-indigo-600 dark:text-indigo-400 shrink-0 overflow-hidden shadow-sm"
+                  class="w-10 h-10 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-center font-bold text-xs text-indigo-600 shrink-0 overflow-hidden shadow-sm"
                 >
                   <img
                     v-if="match.team_a?.logo"
@@ -139,7 +150,7 @@
                 </div>
               </div>
 
-              <!-- Marcador o VS central -->
+              <!-- Marcador o VS -->
               <div
                 class="px-4 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-black text-slate-800 dark:text-slate-200 shrink-0 shadow-sm"
               >
@@ -155,7 +166,7 @@
               <!-- Equipo Visitante -->
               <div class="flex items-center gap-3 flex-1 justify-start overflow-hidden">
                 <div
-                  class="w-10 h-10 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-center font-bold text-xs text-indigo-600 dark:text-indigo-400 shrink-0 overflow-hidden shadow-sm"
+                  class="w-10 h-10 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-center font-bold text-xs text-indigo-600 shrink-0 overflow-hidden shadow-sm"
                 >
                   <img
                     v-if="match.team_b?.logo"
@@ -168,7 +179,7 @@
                   }}</span>
                 </div>
                 <span
-                  class="font-bold text-slate-800 dark:text-slate-200 truncate text-left text-sm group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors"
+                  class="font-bold text-slate-800 dark:text-slate-200 truncate text-left text-sm group-hover:text-indigo-600 transition-colors"
                 >
                   {{ match.team_b?.name || match.team_b?.nombre || 'Visitante' }}
                 </span>
@@ -190,13 +201,113 @@
               </div>
               <button
                 @click="openEditMatch(match.id)"
-                class="bg-white dark:bg-slate-900 hover:bg-indigo-50 dark:hover:bg-indigo-950/60 border border-slate-200 dark:border-slate-800 text-indigo-600 dark:text-indigo-400 font-bold px-3.5 py-2 rounded-xl transition-all shadow-2xs shrink-0 cursor-pointer flex items-center gap-1.5"
+                class="bg-white dark:bg-slate-900 hover:bg-indigo-50 border border-slate-200 dark:border-slate-800 text-indigo-600 font-bold px-3.5 py-2 rounded-xl transition-all shadow-2xs shrink-0 cursor-pointer flex items-center gap-1.5"
               >
                 <span>✏️</span> Editar
               </button>
             </div>
           </div>
         </div>
+      </div>
+    </div>
+
+    <!-- MODAL: REGISTRAR PARTIDO MANUAL -->
+    <div
+      v-if="showCreateManualMatchModal"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/75 backdrop-blur-sm p-4"
+    >
+      <div
+        class="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl relative text-slate-900 dark:text-white"
+      >
+        <button
+          @click="showCreateManualMatchModal = false"
+          class="absolute top-6 right-6 text-slate-400 hover:text-slate-600 font-bold text-xl cursor-pointer"
+        >
+          ✕
+        </button>
+        <h2 class="text-2xl font-black mb-1">Registrar Partido</h2>
+        <p class="text-slate-500 text-xs mb-5">
+          Ideal para configurar manualmente los duelos de la Jornada 1.
+        </p>
+
+        <form @submit.prevent="storeManualMatch" class="space-y-4">
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5"
+              >Equipo Local *</label
+            >
+            <select
+              v-model="manualForm.team_a_id"
+              required
+              class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm"
+            >
+              <option value="" disabled>Selecciona equipo...</option>
+              <option v-for="t in leagueTeams" :key="t.id" :value="t.id">
+                {{ t.name || t.nombre }}
+              </option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5"
+              >Equipo Visitante *</label
+            >
+            <select
+              v-model="manualForm.team_b_id"
+              required
+              class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm"
+            >
+              <option value="" disabled>Selecciona equipo...</option>
+              <option
+                v-for="t in leagueTeams.filter((x) => x.id !== manualForm.team_a_id)"
+                :key="t.id"
+                :value="t.id"
+              >
+                {{ t.name || t.nombre }}
+              </option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5"
+              >Fecha y Hora *</label
+            >
+            <input
+              v-model="manualForm.date"
+              type="datetime-local"
+              required
+              class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm"
+            />
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5"
+              >Sede</label
+            >
+            <input
+              v-model="manualForm.location"
+              type="text"
+              placeholder="Campo Principal"
+              class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm"
+            />
+          </div>
+
+          <div class="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+            <button
+              type="button"
+              @click="showCreateManualMatchModal = false"
+              class="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 cursor-pointer"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              :disabled="savingManual"
+              class="px-5 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white cursor-pointer disabled:opacity-50"
+            >
+              {{ savingManual ? 'Guardando...' : 'Crear Partido' }}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
 
@@ -224,12 +335,22 @@ const props = defineProps<{
 const activeLeagueId = computed(() => props.leagueId || route.params.id || route.params.leagueId)
 
 const matches = ref<any[]>([])
+const leagueTeams = ref<any[]>([])
+const roundsData = ref<any[]>([])
 const loading = ref(true)
 const generating = ref(false)
 
-// Estados para el modal de edición
 const showEditMatchModal = ref(false)
 const selectedMatchId = ref<number | null>(null)
+
+const showCreateManualMatchModal = ref(false)
+const savingManual = ref(false)
+const manualForm = ref({
+  team_a_id: '',
+  team_b_id: '',
+  date: '',
+  location: 'Campo Principal',
+})
 
 const getImageUrl = (logoPath: string | null): string => {
   if (!logoPath) return ''
@@ -239,6 +360,16 @@ const getImageUrl = (logoPath: string | null): string => {
     return logoPath
   }
   return `http://localhost:8000/storage/${logoPath}`
+}
+
+const fetchLeagueTeams = async () => {
+  try {
+    const res = await api.get(`/leagues/${activeLeagueId.value}`)
+    const data = res.data
+    leagueTeams.value = data.equipos || data.teams || data.liga?.equipos || data.league?.teams || []
+  } catch (error) {
+    console.error('Error al cargar equipos de la liga:', error)
+  }
 }
 
 const fetchMatches = async () => {
@@ -258,10 +389,31 @@ const fetchMatches = async () => {
     }
 
     matches.value = allMatches
+    roundsData.value = []
   } catch (error) {
     console.error('Error al cargar partidos:', error)
   } finally {
     loading.value = false
+  }
+}
+
+const storeManualMatch = async () => {
+  try {
+    savingManual.value = true
+    await api.post('/matches', {
+      team_a_id: manualForm.value.team_a_id,
+      team_b_id: manualForm.value.team_b_id,
+      date: manualForm.value.date.replace('T', ' ') + ':00',
+      location: manualForm.value.location,
+      status: 'scheduled',
+    })
+    showCreateManualMatchModal.value = false
+    manualForm.value = { team_a_id: '', team_b_id: '', date: '', location: 'Campo Principal' }
+    await fetchMatches()
+  } catch (error: any) {
+    alert(error.response?.data?.message || 'Error al registrar partido manual')
+  } finally {
+    savingManual.value = false
   }
 }
 
@@ -271,13 +423,15 @@ const generateMatches = async () => {
     const response = await api.post('/matches/generate', {
       league_id: activeLeagueId.value,
     })
-    alert(response.data.message || '¡Rol de partidos generado con éxito!')
+
+    if (response.data.rounds && Array.isArray(response.data.rounds)) {
+      roundsData.value = response.data.rounds
+    }
+
+    alert(response.data.message || '¡Rol automático generado desde la Jornada 2 con éxito!')
     await fetchMatches()
   } catch (error: any) {
-    alert(
-      error.response?.data?.message ||
-        'Error al generar el rol de partidos. Verifica que tengas equipos registrados.',
-    )
+    alert(error.response?.data?.message || 'Error al generar el rol automático.')
   } finally {
     generating.value = false
   }
@@ -295,10 +449,19 @@ const handleMatchUpdated = async () => {
 }
 
 const matchesByRound = computed(() => {
+  if (roundsData.value.length > 0) {
+    return roundsData.value.map((r) => ({
+      jornada: r.round,
+      restingTeam: r.resting_team,
+      matches: r.matches,
+    }))
+  }
+
   const groups: { [key: string]: any[] } = {}
 
   matches.value.forEach((m, index) => {
-    const roundKey = m.jornada || m.round || Math.floor(index / 3) + 1
+    // Si no tienen jornada especificada, los agrupamos de 3 en 3 para la Jornada 1 manual
+    const roundKey = m.jornada || m.round || (index < 3 ? 1 : Math.floor((index - 3) / 3) + 2)
     if (!groups[roundKey]) {
       groups[roundKey] = []
     }
@@ -307,11 +470,13 @@ const matchesByRound = computed(() => {
 
   return Object.keys(groups).map((key) => ({
     jornada: key,
+    restingTeam: null,
     matches: groups[key],
   }))
 })
 
 onMounted(() => {
+  fetchLeagueTeams()
   fetchMatches()
 })
 </script>

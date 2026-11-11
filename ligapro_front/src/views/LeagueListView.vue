@@ -145,12 +145,12 @@
       <div
         v-for="item in leagues"
         :key="item.id"
-        @click="$emit('select-league', item)"
+        @click="handleSelectLeague(item)"
         class="group bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border border-slate-200/80 dark:border-slate-800/80 rounded-3xl p-7 shadow-sm hover:shadow-2xl hover:border-indigo-500/50 dark:hover:border-indigo-500/50 transition-all duration-300 cursor-pointer relative overflow-hidden flex flex-col justify-between"
       >
         <!-- Brillo superior dinámico en hover -->
         <div
-          class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-indigo-500 via-violet-500 to-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity"
+          class="absolute top-0 left-0 right-0 h-1.5 bg-linear-to-r from-indigo-500 via-violet-500 to-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity"
         ></div>
 
         <div>
@@ -221,6 +221,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import api from '../services/api'
 import CreateLeagueModal from './components/modals/CreateLeagueModal.vue'
 
@@ -236,12 +237,18 @@ interface League {
   categories?: Category[]
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const router = useRouter()
+
 const emit = defineEmits(['select-league'])
 
 const leagues = ref<League[]>([])
 const loading = ref<boolean>(true)
 const showCreateLeagueModal = ref<boolean>(false)
+
+const handleSelectLeague = (item: League) => {
+  emit('select-league', item)
+  router.push(`/leagues/${item.id}`)
+}
 
 const fetchLeagues = async () => {
   try {

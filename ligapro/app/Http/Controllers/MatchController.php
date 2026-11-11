@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\MatchModel;
 use App\Models\MatchEvent;
+use App\Models\MatchPlayer;
 use App\Models\Team;
 use App\Models\Player;
 use Illuminate\Http\Request;
@@ -17,17 +18,16 @@ class MatchController extends Controller
     {
         $query = MatchModel::with(['teamA', 'teamB']);
 
-        if ($request->has('league_id')) {
-            $query->whereHas('teamA', function ($q) use ($request) {
-                $q->where('league_id', $request->query('league_id'));
+        if ($request->has('league_id')) {$query->whereHas('teamA', function ($q) use ($request) {
+                $q->where('league_id',$request->query('league_id'));
             });
         }
 
         if ($request->has('status')) {
-            $query->where('status', $request->query('status'));
+            $query->where('status',$request->query('status'));
         }
 
-        $matches = $query->orderBy('date', 'asc')->get();
+        $matches =$query->orderBy('date', 'asc')->get();
 
         return response()->json([
             'success' => true,
@@ -37,11 +37,11 @@ class MatchController extends Controller
 
     public function generate(Request $request): JsonResponse
     {
-        $validated = $request->validate([
+        $validated =$request->validate([
             'league_id' => 'required|exists:leagues,id',
         ]);
 
-        $teams = Team::where('league_id', $validated['league_id'])->pluck('id')->toArray();
+        $teams = Team::where('league_id',$validated['league_id'])->get(['id', 'name'])->toArray();
 
         if (count($teams) < 2) {
             return response()->json([
@@ -50,24 +50,32 @@ class MatchController extends Controller
             ], 400);
         }
 
-        if (count($teams) % 2 != 0) {
-            $teams[] = null;
+        $isOdd = count($teams) % 2 != 0;
+        if ($isOdd) {$teams[] = null; // Comodín para el equipo que descansa
         }
 
         $numTeams = count($teams);
-        $rounds = $numTeams - 1;
-        $createdMatches = [];
-        $currentDate = Carbon::now();
+        $rounds =$numTeams - 1;
+        $half =$numTeams / 2;
+        $roundsData = [];
+
+        // Empezamos a calcular las fechas automáticas a partir de la próxima semana (Jornada 2)
+        $currentDate = Carbon::now()->addWeek();
 
         for ($round = 0; $round < $rounds; $round++) {
-            for ($i = 0; $i < $numTeams / 2; $i++) {
-                $teamA = $teams[$i];
-                $teamB = $teams[$numTeams - 1 - $i];
+            $roundMatches = [];$restingTeam = null;
 
-                if ($teamA !== null && $teamB !== null) {
+            for ($i = 0; $i <$half; $i++) {$teamA = $teams[$i];
+                $teamB =$teams[$numTeams - 1 -$i];
+
+                if ($teamA === null) {
+                    $restingTeam =$teamB;
+                } elseif ($teamB === null) {
+                    $restingTeam =$teamA;
+                } else {
                     $match = MatchModel::create([
-                        'team_a_id' => $teamA,
-                        'team_b_id' => $teamB,
+                        'team_a_id' => $teamA['id'],
+                        'team_b_id' => $teamB['id'],
                         'date'      => $currentDate->format('Y-m-d H:i:s'),
                         'location'  => 'Campo Principal',
                         'status'    => 'scheduled',
@@ -75,25 +83,35 @@ class MatchController extends Controller
                         'score_b'   => 0,
                     ]);
 
-                    $createdMatches[] = $match;
+                    $roundMatches[] =$match->load(['teamA', 'teamB']);
                 }
             }
 
+            // Las jornadas automáticas comienzan numeradas desde la Jornada 2 ($round + 2)$roundsData[] = [
+                            // Las jornadas automáticas comienzan numeradas desde la Jornada 2 ($round + 2)
+                            $roundsData[] = [
+                'round'        => $round + 2, 'date'         =>$currentDate->format('Y-m-d'),
+                'matches'      => $roundMatches,
+                'resting_team' => $restingTeam
+            ];
+
+            // Rotación del algoritmo Round-Robin
+            $lastElement = array_pop($teams);
+            array_splice($teams, 1, 0, [$lastElement]);
+
             $currentDate->addWeek();
-            array_splice($teams, 1, 0, array_pop($teams));
         }
 
         return response()->json([
             'success' => true,
-            'message' => 'Calendario de partidos generado exitosamente',
-            'total_matches' => count($createdMatches),
-            'data' => $createdMatches
+            'message' => 'Calendario automático generado a partir de la Jornada 2',
+            'rounds'  => $roundsData
         ], 201);
     }
 
     public function store(Request $request): JsonResponse
     {
-        $validated = $request->validate([
+        $validated =$request->validate([
             'team_a_id' => 'required|exists:teams,id|different:team_b_id',
             'team_b_id' => 'required|exists:teams,id',
             'date'      => 'required|date',
@@ -124,8 +142,7 @@ class MatchController extends Controller
             $match = MatchModel::with([
                 'teamA.players',
                 'teamB.players',
-                'events' => function ($query) {
-                    $query->orderBy('minute', 'asc');
+                'events' => function ($query) {$query->orderBy('minute', 'asc');
                 },
                 'events.player',
                 'events.team'
@@ -138,18 +155,18 @@ class MatchController extends Controller
                 ], 404);
             }
 
-            $events = $match->events ?? collect();
+            $events =$match->events ?? collect();
 
             $stats = [
                 'team_a' => [
-                    'goals'        => $events->where('team_id', $match->team_a_id)->where('type', 'goal')->count(),
-                    'yellow_cards' => $events->where('team_id', $match->team_a_id)->where('type', 'yellow_card')->count(),
-                    'red_cards'    => $events->where('team_id', $match->team_a_id)->where('type', 'red_card')->count(),
+                    'goals'        => $events->where('team_id',$match->team_a_id)->where('type', 'goal')->count(),
+                    'yellow_cards' => $events->where('team_id',$match->team_a_id)->where('type', 'yellow_card')->count(),
+                    'red_cards'    => $events->where('team_id',$match->team_a_id)->where('type', 'red_card')->count(),
                 ],
                 'team_b' => [
-                    'goals'        => $events->where('team_id', $match->team_b_id)->where('type', 'goal')->count(),
-                    'yellow_cards' => $events->where('team_id', $match->team_b_id)->where('type', 'yellow_card')->count(),
-                    'red_cards'    => $events->where('team_id', $match->team_b_id)->where('type', 'red_card')->count(),
+                    'goals'        => $events->where('team_id',$match->team_b_id)->where('type', 'goal')->count(),
+                    'yellow_cards' => $events->where('team_id',$match->team_b_id)->where('type', 'yellow_card')->count(),
+                    'red_cards'    => $events->where('team_id',$match->team_b_id)->where('type', 'red_card')->count(),
                 ]
             ];
 
@@ -172,11 +189,11 @@ class MatchController extends Controller
         }
     }
 
-    public function update(Request $request, $id): JsonResponse
+    public function update(Request $request,$id): JsonResponse
     {
         $match = MatchModel::findOrFail($id);
 
-        $validated = $request->validate([
+        $validated =$request->validate([
             'team_a_id'          => 'sometimes|required|exists:teams,id|different:team_b_id',
             'team_b_id'          => 'sometimes|required|exists:teams,id',
             'date'               => 'sometimes|required|date',
@@ -191,12 +208,11 @@ class MatchController extends Controller
             'events.*.minute'    => 'nullable|integer|min:1|max:120',
         ]);
 
-        DB::transaction(function () use ($match, $validated) {
-            $match->update([
+        DB::transaction(function () use ($match, $validated) {$match->update([
                 'team_a_id' => $validated['team_a_id'] ?? $match->team_a_id,
                 'team_b_id' => $validated['team_b_id'] ?? $match->team_b_id,
                 'date'      => $validated['date'] ?? $match->date,
-                'location'  => array_key_exists('location', $validated) ? $validated['location'] : $match->location,
+                'location'  => array_key_exists('location', $validated) ? $validated['location'] :$match->location,
                 'score_a'   => $validated['score_a'] ?? $match->score_a,
                 'score_b'   => $validated['score_b'] ?? $match->score_b,
                 'status'    => $validated['status'] ?? $match->status,
@@ -206,7 +222,7 @@ class MatchController extends Controller
                 MatchEvent::where('match_id', $match->id)->delete();
 
                 if (!empty($validated['events'])) {
-                    foreach ($validated['events'] as $event) {
+                    foreach ($validated['events'] as$event) {
                         MatchEvent::create([
                             'match_id'  => $match->id,
                             'player_id' => $event['player_id'],
@@ -218,13 +234,8 @@ class MatchController extends Controller
                 }
             }
 
-            // Recalcular solamente goles y tarjetas (los partidos suspendidos se gestionan manual)
             $players = Player::all();
-            foreach ($players as $player) {
-                $player->goals        = MatchEvent::where('player_id', $player->id)->where('type', 'goal')->count();
-                $player->yellow_cards = MatchEvent::where('player_id', $player->id)->where('type', 'yellow_card')->count();
-                $player->red_cards    = MatchEvent::where('player_id', $player->id)->where('type', 'red_card')->count();
-                $player->save();
+            foreach ($players as $player) {$player->goals        = MatchEvent::where('player_id', $player->id)->where('type', 'goal')->count();$player->yellow_cards = MatchEvent::where('player_id', $player->id)->where('type', 'yellow_card')->count();$player->red_cards    = MatchEvent::where('player_id', $player->id)->where('type', 'red_card')->count();$player->save();
             }
         });
 
@@ -235,15 +246,66 @@ class MatchController extends Controller
         ], 200);
     }
 
-    public function updateResult(Request $request, $id): JsonResponse
+    public function updateResult(Request $request,$id): JsonResponse
     {
-        return $this->update($request, $id);
+        return $this->update($request,$id);
+    }
+
+    public function storeLineup(Request $request,$id): JsonResponse
+    {
+        $match = MatchModel::findOrFail($id);
+
+        $validated =$request->validate([
+            'team_id'       => 'required|exists:teams,id',
+            'starters'      => 'required|array',
+            'starters.*'    => 'exists:players,id',
+            'substitutes'   => 'nullable|array',
+            'substitutes.*' => 'exists:players,id',
+        ]);
+
+        DB::transaction(function () use ($match,$validated) {
+            foreach ($validated['starters'] as$playerId) {
+                $exists = MatchPlayer::where('match_id',$match->id)
+                    ->where('player_id', $playerId)
+                    ->exists();
+
+                MatchPlayer::updateOrCreate(
+                    ['match_id' => $match->id, 'player_id' =>$playerId],
+                    ['team_id' => $validated['team_id'], 'type' => 'starter']
+                );
+
+                if (!$exists) {
+                    Player::where('id', $playerId)->increment('matches_played');
+                }
+            }
+
+            if (!empty($validated['substitutes'])) {
+                foreach ($validated['substitutes'] as$playerId) {
+                    $exists = MatchPlayer::where('match_id',$match->id)
+                        ->where('player_id', $playerId)
+                        ->exists();
+
+                    MatchPlayer::updateOrCreate(
+                        ['match_id' => $match->id, 'player_id' =>$playerId],
+                        ['team_id' => $validated['team_id'], 'type' => 'substitute']
+                    );
+
+                    if (!$exists) {
+                        Player::where('id', $playerId)->increment('matches_played') ;
+                    }
+                }
+            }
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Alineación guardada y partidos jugados actualizados correctamente.'
+        ], 200);
     }
 
     public function destroy($id): JsonResponse
     {
-        $match = MatchModel::findOrFail($id);
-        $match->delete();
+        $match = MatchModel::findOrFail($id);$match->delete();
 
         return response()->json([
             'success' => true,

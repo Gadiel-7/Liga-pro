@@ -5,6 +5,18 @@ const router = createRouter({
   routes: [
     // --- Autenticación ---
     {
+      path: '/email/verify/:id/:hash?',
+      name: 'VerifyEmail',
+      component: () => import('../views/VerifyEmailView.vue'),
+    },
+
+    {
+      path: '/explorer',
+      name: 'explorer',
+      component: () => import('../views/ExplorerView.vue'),
+    },
+
+    {
       path: '/login',
       name: 'login',
       component: () => import('../views/LoginView.vue'),
@@ -29,7 +41,7 @@ const router = createRouter({
 
     {
       path: '/',
-      redirect: '/dashboard',
+      redirect: '/login',
     },
     {
       path: '/dashboard',
@@ -67,11 +79,6 @@ const router = createRouter({
       path: '/statistics',
       name: 'statistics',
       component: () => import('../views/StatisticsView.vue'),
-    },
-    {
-      path: '/standings',
-      name: 'standings',
-      component: () => import('../views/StandingsView.vue'),
     },
     {
       path: '/about',

@@ -1,155 +1,133 @@
-<!-- components/modals/CreateTeamModal.vue -->
+<script setup lang="ts">
+import { ref } from 'vue'
+import api from '../../../services/api'
+
+const emit = defineEmits(['close', 'created'])
+
+const form = ref({
+  name: '',
+  category_name: '',
+  description: '',
+})
+
+const loading = ref(false)
+const errorMessage = ref('')
+
+const handleSubmit = async () => {
+  try {
+    loading.value = true
+    errorMessage.value = ''
+
+    const response = await api.post('/leagues', form.value)
+
+    const createdLeague = response.data.data?.league || response.data.data || response.data
+    emit('created', createdLeague)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (error: any) {
+    const errors = error.response?.data?.errors
+    if (errors) {
+      const firstKey = Object.keys(errors)[0]
+      errorMessage.value = errors[firstKey][0]
+    } else {
+      errorMessage.value = error.response?.data?.message || 'Ocurrió un error al crear la liga.'
+    }
+  } finally {
+    loading.value = false
+  }
+}
+</script>
+
 <template>
   <div
-    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm"
+    class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4"
   >
-    <div class="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl">
-      <div class="flex justify-between items-center mb-5">
-        <h3 class="text-xl font-bold text-slate-900">Registrar Nuevo Equipo</h3>
-        <button
-          type="button"
-          @click="$emit('close')"
-          class="text-slate-400 hover:text-slate-600 text-2xl leading-none"
-        >
-          &times;
-        </button>
+    <div
+      class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-md w-full p-8 shadow-2xl relative"
+    >
+      <!-- Botón cerrar -->
+      <button
+        @click="$emit('close')"
+        class="absolute top-6 right-6 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 font-bold text-xl cursor-pointer"
+      >
+        ✕
+      </button>
+
+      <h2 class="text-2xl font-black text-slate-900 dark:text-white mb-2">Crear Nueva Liga</h2>
+      <p class="text-slate-500 dark:text-slate-400 text-sm mb-6">
+        Configura los datos principales de tu torneo oficial y su categoría inicial.
+      </p>
+
+      <div
+        v-if="errorMessage"
+        class="mb-4 p-3 bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900 text-red-600 dark:text-red-400 rounded-xl text-sm font-medium"
+      >
+        {{ errorMessage }}
       </div>
 
-      <form @submit.prevent="submitTeam">
-        <!-- Nombre del Equipo (Obligatorio) -->
-        <div class="mb-4">
-          <label class="block text-sm font-medium text-slate-700 mb-1">
-            Nombre del Equipo <span class="text-red-500">*</span>
+      <form @submit.prevent="handleSubmit" class="space-y-4">
+        <div>
+          <label
+            class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2"
+          >
+            Nombre de la Liga *
           </label>
           <input
-            v-model="teamForm.name"
+            v-model="form.name"
             type="text"
             required
-            class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            placeholder="Ej. Cuervos FC"
+            placeholder="Ej. Liga Municipal de Halachó"
+            class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
         </div>
 
-        <!-- Tag / Abreviatura -->
-        <div class="mb-4">
-          <label class="block text-sm font-medium text-slate-700 mb-1">
-            Abreviatura / Tag (Opcional)
+        <div>
+          <label
+            class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2"
+          >
+            Categoría Principal *
           </label>
           <input
-            v-model="teamForm.tag"
+            v-model="form.category_name"
             type="text"
-            maxlength="5"
-            class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 uppercase"
-            placeholder="Ej. CUE"
+            required
+            placeholder="Ej. Primera Fuerza / Libre Varonil"
+            class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
         </div>
 
-        <!-- Ubicación / Sede de Origen -->
-        <div class="mb-4">
-          <label class="block text-sm font-medium text-slate-700 mb-1">
-            Sede / Ubicación (Opcional)
+        <div>
+          <label
+            class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2"
+          >
+            Descripción (Opcional)
           </label>
-          <input
-            v-model="teamForm.location"
-            type="text"
-            class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            placeholder="Ej. Oxkutzcab / Yotholín"
-          />
+          <textarea
+            v-model="form.description"
+            rows="3"
+            placeholder="Breve descripción del torneo..."
+            class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          ></textarea>
         </div>
 
-        <!-- Escudo / Logo -->
-        <div class="mb-6">
-          <label class="block text-sm font-medium text-slate-700 mb-1">
-            Escudo / Logo (Opcional)
-          </label>
-          <input
-            @change="handleTeamLogo"
-            type="file"
-            accept="image/*"
-            class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
-          />
-        </div>
-
-        <!-- Botones de Acción -->
-        <div class="flex justify-end gap-3">
+        <div
+          class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800"
+        >
           <button
             type="button"
             @click="$emit('close')"
-            class="px-4 py-2 text-sm font-medium text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors"
+            class="px-5 py-2.5 rounded-xl text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer"
           >
             Cancelar
           </button>
           <button
             type="submit"
-            :disabled="isSubmittingTeam"
-            class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50"
+            :disabled="loading"
+            class="px-6 py-2.5 rounded-xl text-sm font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-600/30 transition-all cursor-pointer disabled:opacity-50"
           >
-            {{ isSubmittingTeam ? 'Guardando...' : 'Guardar Equipo' }}
+            {{ loading ? 'Guardando...' : 'Crear Liga' }}
           </button>
         </div>
       </form>
     </div>
   </div>
 </template>
-
-<script setup lang="ts">
-import { ref } from 'vue'
-import api from '../../../services/api'
-
-const props = defineProps<{
-  leagueId: string | number
-}>()
-
-const emit = defineEmits<{
-  (e: 'close'): void
-  (e: 'team-created'): void
-}>()
-
-const isSubmittingTeam = ref(false)
-const teamForm = ref({
-  name: '',
-  tag: '',
-  location: '',
-  logo: null as File | null,
-})
-
-const handleTeamLogo = (event: Event) => {
-  const target = event.target as HTMLInputElement
-  if (target.files && target.files.length > 0) {
-    teamForm.value.logo = target.files[0]!
-  }
-}
-
-const submitTeam = async () => {
-  try {
-    isSubmittingTeam.value = true
-    const formData = new FormData()
-
-    formData.append('name', teamForm.value.name)
-    formData.append('league_id', String(props.leagueId))
-
-    if (teamForm.value.tag) {
-      formData.append('tag', teamForm.value.tag.toUpperCase())
-    }
-
-    if (teamForm.value.location) {
-      formData.append('location', teamForm.value.location)
-    }
-
-    if (teamForm.value.logo) {
-      formData.append('logo', teamForm.value.logo)
-    }
-
-    await api.post('/teams', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    })
-
-    emit('team-created')
-  } catch (err: any) {
-    console.error('Error al crear equipo:', err)
-    alert(err.response?.data?.message || 'Hubo un error al crear el equipo.')
-  } finally {
-    isSubmittingTeam.value = false
-  }
-}
-</script>

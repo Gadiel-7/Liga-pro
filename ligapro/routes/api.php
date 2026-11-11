@@ -11,16 +11,24 @@ use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\LeagueController;
 use Illuminate\Support\Facades\Route;
 
-// --- 1. Rutas de Autenticación 
+// --- 1. Rutas de Autenticación
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 
-// --- 2. Rutas de Consulta 
+// Rutas de Verificación de Correo (Hash opcional para evitar bloqueos por parámetros)
+Route::get('/email/verify/{id}/{hash?}', [AuthController::class, 'verifyEmail'])
+    ->name('verification.verify');
+
+Route::post('/email/resend', [AuthController::class, 'resendVerificationEmail'])
+    ->middleware(['auth:sanctum'])
+    ->name('verification.send');
+
+// --- 2. Rutas de Consulta Públicas
 Route::get('/teams', [TeamController::class, 'index']);
 Route::get('/teams/{team}', [TeamController::class, 'show']);
 
 Route::get('/matches', [MatchController::class, 'index']);
-Route::get('/matches/{match}', [MatchController::class, 'show']); 
+Route::get('/matches/{match}', [MatchController::class, 'show']);
 Route::get('/standings', [StandingsController::class, 'index']);
 Route::get('/players', [PlayerController::class, 'index']);
 Route::get('/players/{player}', [PlayerController::class, 'show']);
@@ -32,7 +40,8 @@ Route::get('/categories/{category}', [CategoryController::class, 'show']);
 Route::get('/leagues', [LeagueController::class, 'index']);
 Route::get('/leagues/{league}', [LeagueController::class, 'show']);
 
-Route::middleware('auth:sanctum')->group(function () {
+// --- 3. Rutas Protegidas (Requieren Login y Correo Verificado)
+Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
 
     Route::get('/dashboard', [DashboardController::class, 'index']);
@@ -54,6 +63,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/matches/generate', [MatchController::class, 'generate']);
         Route::post('/matches', [MatchController::class, 'store']);
         Route::put('/matches/{match}', [MatchController::class, 'update']);
+        Route::post('/matches/{match}/lineup', [MatchController::class, 'storeLineup']);
         Route::delete('/matches/{match}', [MatchController::class, 'destroy']);
         Route::put('/matches/{match}/result', [MatchController::class, 'updateResult']);
 
