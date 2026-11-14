@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Password;
 use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
@@ -66,7 +67,6 @@ class AuthController extends Controller
         ]);
     }
 
-    // Método optimizado para asegurar el guardado de la fecha de verificación
     public function verifyEmail(Request $request, $id)
     {
         $user = User::find($id);
@@ -83,7 +83,6 @@ class AuthController extends Controller
             ]);
         }
 
-        // Fuerza de manera directa la escritura de la fecha en la base de datos
         $user->markEmailAsVerified();
         event(new \Illuminate\Auth\Events\Verified($user));
 
@@ -105,6 +104,25 @@ class AuthController extends Controller
         return response()->json([
             'message' => 'Se ha reenviado el enlace de verificación a tu correo.'
         ]);
+    }
+
+    public function forgotPassword(Request $request)
+    {
+        $request->validate(['email' => 'required|email']);
+
+        $user = User::where('email', $request->email)->first();
+
+        if (! $user) {
+            return response()->json([
+                'message' => 'No encontramos un usuario registrado con ese correo electrónico.'
+            ], 404);
+        }
+
+        Password::sendResetLink(['email' => $user->email]);
+
+        return response()->json([
+            'message' => 'Enlace de recuperación enviado con éxito.'
+        ], 200);
     }
 
     public function logout(Request $request)

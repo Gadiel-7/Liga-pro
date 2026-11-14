@@ -8,3 +8,10 @@
 .dark {
   color-scheme: dark;
 }
+
+/* --- SOLUCIÓN PARA LOS SELECTS Y SUS OPCIONES --- */
+select,
+select option {
+  background-color: #0f172a !important; /* Fondo oscuro consistente (slate-900) */
+  color: #ffffff !important; /* Texto blanco y nítido */
+}

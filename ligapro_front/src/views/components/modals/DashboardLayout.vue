@@ -38,7 +38,7 @@
             🏆 Ligas
           </router-link>
           <router-link
-            to="/matches"
+            to="/admin/matches"
             class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors"
             :class="
               $route.path === '/matches'

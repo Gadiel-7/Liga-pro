@@ -6,7 +6,7 @@
         to="/dashboard"
         class="inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-indigo-600 transition-colors"
       >
-        &larr; Volver a Mis Ligas
+        &larr;
       </router-link>
     </div>
 
@@ -28,7 +28,6 @@
         to="/dashboard"
         class="text-xs bg-red-100 hover:bg-red-200 text-red-800 px-3 py-1.5 rounded-lg transition-colors inline-block mt-2"
       >
-        Volver a Mis Ligas
       </router-link>
     </div>
 
@@ -47,15 +46,13 @@
               class="w-full h-full object-cover"
               @error="(e: Event) => ((e.target as HTMLImageElement).style.display = 'none')"
             />
-            <span v-else>🏆</span>
+            <span v-else></span>
           </div>
           <div>
             <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight">
               {{ liga.nombre || liga.name }}
             </h1>
-            <p class="text-slate-500 text-sm mt-1">
-              Gestión completa de clubes, plantillas y torneos.
-            </p>
+            <p class="text-slate-500 text-sm mt-1"></p>
           </div>
         </div>
 
@@ -157,9 +154,7 @@
         >
           <div
             class="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold"
-          >
-            🛡️
-          </div>
+          ></div>
           <h3 class="text-lg font-bold text-slate-900 mb-1">No hay equipos registrados</h3>
           <p class="text-slate-500 text-sm max-w-md mx-auto mb-6">
             Esta liga aún no tiene clubes asignados.

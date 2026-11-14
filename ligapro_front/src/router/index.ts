@@ -9,13 +9,6 @@ const router = createRouter({
       name: 'VerifyEmail',
       component: () => import('../views/VerifyEmailView.vue'),
     },
-
-    {
-      path: '/explorer',
-      name: 'explorer',
-      component: () => import('../views/ExplorerView.vue'),
-    },
-
     {
       path: '/login',
       name: 'login',
@@ -27,21 +20,59 @@ const router = createRouter({
       component: () => import('../views/RegisterView.vue'),
     },
 
-    // --- Panel Principal y Ligas ---
+    // --- Rutas del Aficionado (Solo Lectura) ---
     {
-      path: '/profile',
-      name: 'profile',
-      component: () => import('../views/ProfileView.vue'),
+      path: '/explorer',
+      name: 'explorer',
+      component: () => import('../views/ExplorerView.vue'),
+    },
+    {
+      path: '/aficionado/matches',
+      name: 'aficionado-matches',
+      component: () => import('../views/AficionadoMatchesView.vue'),
+    },
+    {
+      path: '/league/matches',
+      name: 'league-matches',
+      component: () => import('../views/LeagueMatchesAficionadoView.vue'),
+    },
+
+    {
+      path: '/aficionado/leagues/:id',
+      name: 'league-detail-aficionado',
+      component: () => import('../views/LeagueDetailAficionadoView.vue'),
+    },
+    {
+      path: '/aficionado/teams/:id',
+      name: 'aficionado-team-detail',
+      component: () => import('../views/AficionadoTeamDetailView.vue'),
     },
     {
       path: '/standings',
       name: 'standings',
-      component: () => import('../views/StandingsView.vue'),
+      component: () => import('../views/AficionadoStandingsAndStatsView.vue'),
+    },
+    {
+      path: '/statistics',
+      name: 'statistics',
+      component: () => import('../views/AficionadoStandingsAndStatsView.vue'),
     },
 
+    // --- Panel de Administración / Gestión (Original) ---
     {
-      path: '/',
-      redirect: '/login',
+      path: '/teams/:id',
+      name: 'team-detail',
+      component: () => import('../views/TeamDetailView.vue'),
+    },
+    {
+      path: '/leagues/:id',
+      name: 'league-detail',
+      component: () => import('../views/LeagueDetailView.vue'),
+    },
+    {
+      path: '/admin/matches',
+      name: 'admin-matches',
+      component: () => import('../views/MatchesView.vue'),
     },
     {
       path: '/dashboard',
@@ -54,31 +85,14 @@ const router = createRouter({
       component: () => import('../views/LeagueListView.vue'),
     },
     {
-      path: '/leagues/:id',
-      name: 'league-detail',
-      component: () => import('../views/LeagueDetailView.vue'),
-    },
-
-    // --- Secciones de Gestión ---
-    {
-      path: '/matches',
-      name: 'matches',
-      component: () => import('../views/MatchesView.vue'),
-    },
-    {
       path: '/categories',
       name: 'categories',
       component: () => import('../views/CategoriesView.vue'),
     },
     {
-      path: '/teams/:id',
-      name: 'team-detail',
-      component: () => import('../views/TeamDetailView.vue'),
-    },
-    {
-      path: '/statistics',
-      name: 'statistics',
-      component: () => import('../views/StatisticsView.vue'),
+      path: '/profile',
+      name: 'profile',
+      component: () => import('../views/ProfileView.vue'),
     },
     {
       path: '/about',
@@ -86,10 +100,14 @@ const router = createRouter({
       component: () => import('../views/AboutView.vue'),
     },
 
-    // Ruta de comodín para redirigir cualquier URL desconocida al dashboard
+    // Ruta raíz y comodín
+    {
+      path: '/',
+      redirect: '/login',
+    },
     {
       path: '/:pathMatch(.*)*',
-      redirect: '/dashboard',
+      redirect: '/explorer',
     },
   ],
 })

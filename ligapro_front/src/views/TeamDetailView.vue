@@ -171,7 +171,7 @@
         </div>
       </div>
 
-      <!-- 2. PESTAÑA: PARTIDOS -->
+      <!-- 2. PESTAÑA: PARTIDOS (Con Escudos Incluidos) -->
       <div v-if="activeTab === 'partidos'" class="space-y-4">
         <div class="mb-4">
           <h3 class="text-xl font-bold text-slate-900">Calendario y Resultados</h3>
@@ -192,9 +192,39 @@
             class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex items-center justify-between gap-4"
           >
             <div class="flex items-center gap-3 flex-1">
-              <span class="font-bold text-slate-800 text-sm text-right flex-1 truncate">
-                {{ match.teamA?.name || match.team_a?.name || 'Local' }}
-              </span>
+              <!-- Equipo Local (Nombre + Escudo) -->
+              <div class="flex items-center gap-2 flex-1 justify-end overflow-hidden">
+                <span class="font-bold text-slate-800 text-sm text-right truncate">
+                  {{ match.teamA?.name || match.team_a?.name || 'Local' }}
+                </span>
+                <div
+                  class="w-8 h-8 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center font-bold text-[10px] text-indigo-600 shrink-0 overflow-hidden shadow-2xs"
+                >
+                  <img
+                    v-if="
+                      match.teamA?.logo ||
+                      match.team_a?.logo ||
+                      match.teamA?.shield_url ||
+                      match.team_a?.shield_url
+                    "
+                    :src="
+                      getImageUrl(
+                        match.teamA?.logo ||
+                          match.team_a?.logo ||
+                          match.teamA?.shield_url ||
+                          match.team_a?.shield_url,
+                      )
+                    "
+                    class="w-full h-full object-cover"
+                    @error="(e: Event) => ((e.target as HTMLImageElement).style.display = 'none')"
+                  />
+                  <span v-else>{{
+                    (match.teamA?.name || match.team_a?.name || 'L').charAt(0).toUpperCase()
+                  }}</span>
+                </div>
+              </div>
+
+              <!-- Marcador o VS -->
               <div
                 class="px-3 py-1 bg-slate-100 border border-slate-200 rounded-lg text-xs font-black text-slate-700 shrink-0"
               >
@@ -203,9 +233,38 @@
                 </span>
                 <span v-else class="text-indigo-600">VS</span>
               </div>
-              <span class="font-bold text-slate-800 text-sm text-left flex-1 truncate">
-                {{ match.teamB?.name || match.team_b?.name || 'Visitante' }}
-              </span>
+
+              <!-- Equipo Visitante (Escudo + Nombre) -->
+              <div class="flex items-center gap-2 flex-1 justify-start overflow-hidden">
+                <div
+                  class="w-8 h-8 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center font-bold text-[10px] text-indigo-600 shrink-0 overflow-hidden shadow-2xs"
+                >
+                  <img
+                    v-if="
+                      match.teamB?.logo ||
+                      match.team_b?.logo ||
+                      match.teamB?.shield_url ||
+                      match.team_b?.shield_url
+                    "
+                    :src="
+                      getImageUrl(
+                        match.teamB?.logo ||
+                          match.team_b?.logo ||
+                          match.teamB?.shield_url ||
+                          match.team_b?.shield_url,
+                      )
+                    "
+                    class="w-full h-full object-cover"
+                    @error="(e: Event) => ((e.target as HTMLImageElement).style.display = 'none')"
+                  />
+                  <span v-else>{{
+                    (match.teamB?.name || match.team_b?.name || 'V').charAt(0).toUpperCase()
+                  }}</span>
+                </div>
+                <span class="font-bold text-slate-800 text-sm text-left truncate">
+                  {{ match.teamB?.name || match.team_b?.name || 'Visitante' }}
+                </span>
+              </div>
             </div>
 
             <div class="text-xs text-slate-500 text-right shrink-0">

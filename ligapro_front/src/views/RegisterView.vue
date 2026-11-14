@@ -1,25 +1,38 @@
 <template>
   <div class="auth-container">
     <div class="auth-card">
-      <h2>Registro en Ligapro</h2>
+      <!-- LOGOTIPO Y ENCABEZADO -->
+      <div class="logo-container">
+        <div class="logo-wrapper">
+          <img
+            src="../assets/logo.png"
+            alt="LigaPro Logo"
+            class="app-logo"
+            @error="(e: Event) => ((e.target as HTMLImageElement).style.display = 'none')"
+          />
+        </div>
+        <h2>Crear Cuenta</h2>
+        <p class="subtitle">Únete a la mejor plataforma de gestión deportiva</p>
+      </div>
+
       <form v-if="!registered" @submit.prevent="handleRegister">
         <div class="form-group">
-          <label>Nombre:</label>
-          <input type="text" v-model="name" required placeholder="Tu nombre completo" />
+          <label>Nombre Completo</label>
+          <input type="text" v-model="name" required placeholder="Tu nombre" />
         </div>
 
         <div class="form-group">
-          <label>Correo Electrónico:</label>
+          <label>Correo Electrónico</label>
           <input type="email" v-model="email" required placeholder="ejemplo@gmail.com" />
         </div>
 
         <div class="form-group">
-          <label>Contraseña (mínimo 6 caracteres):</label>
-          <input type="password" v-model="password" required placeholder="********" />
+          <label>Contraseña</label>
+          <input type="password" v-model="password" required placeholder="Mínimo 6 caracteres" />
         </div>
 
         <div class="form-group">
-          <label>Rol de Usuario:</label>
+          <label>Rol de Usuario</label>
           <select v-model="role" required class="form-select">
             <option value="aficionado">Aficionado</option>
             <option value="representante">Representante</option>
@@ -28,20 +41,21 @@
         </div>
 
         <button type="submit" :disabled="loading" class="btn-primary">
-          {{ loading ? 'Registrando...' : 'Registrarse' }}
+          {{ loading ? 'Registrando...' : 'Completar Registro' }}
         </button>
       </form>
 
-      <!-- Mensaje de éxito post-registro pidiendo verificación -->
+      <!-- Mensaje de éxito post-registro -->
       <div v-else class="success-box">
-        <h3>✉️ ¡Cuenta creada con éxito!</h3>
+        <div class="success-icon">✉️</div>
+        <h3>¡Cuenta creada con éxito!</h3>
         <p>
-          Hemos enviado un enlace de confirmación a <strong>{{ email }}</strong
+          Hemos enviado un enlace de confirmación a
+          <strong class="text-slate-900">{{ email }}</strong
           >.
         </p>
         <p class="instruction">
-          Por favor, revisa tu bandeja de entrada (o spam) para verificar tu correo antes de iniciar
-          sesión.
+          Revisa tu bandeja de entrada o spam para verificar tu cuenta antes de iniciar sesión.
         </p>
         <router-link
           to="/login"
@@ -55,7 +69,7 @@
       <p v-if="errorMessage" class="error">{{ errorMessage }}</p>
 
       <p v-if="!registered" class="switch-link">
-        ¿Ya tienes una cuenta? <router-link to="/login">Inicia sesión</router-link>
+        ¿Ya tienes cuenta? <router-link to="/login">Inicia sesión</router-link>
       </p>
     </div>
   </div>
@@ -111,103 +125,174 @@ const handleRegister = async () => {
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: #0f172a;
+  background-color: #020617;
+  background-image: radial-gradient(circle at 50% 0%, rgba(34, 197, 94, 0.12) 0%, transparent 65%);
 }
+
 .auth-card {
   width: 100%;
-  max-width: 420px;
+  max-width: 440px;
   padding: 40px;
   background: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  border-radius: 24px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
   box-sizing: border-box;
+  max-height: 90vh;
+  overflow-y: auto;
 }
-.auth-card h2 {
-  margin-top: 0;
-  margin-bottom: 24px;
+
+.logo-container {
   text-align: center;
-  color: #1e293b;
+  margin-bottom: 24px;
+}
+
+.logo-wrapper {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 14px auto;
+  border-radius: 16px;
+  background: #090d16;
+  border: 2px solid #22c55e;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 15px rgba(34, 197, 94, 0.3);
+  overflow: hidden;
+}
+
+.app-logo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.auth-card h2 {
+  margin: 0;
+  color: #0f172a;
   font-size: 24px;
-  font-weight: 600;
+  font-weight: 800;
+  letter-spacing: -0.5px;
 }
+
+.subtitle {
+  color: #64748b;
+  font-size: 13px;
+  margin-top: 4px;
+  margin-bottom: 0;
+}
+
 .form-group {
-  margin-bottom: 18px;
+  margin-bottom: 16px;
 }
+
 .form-group label {
   display: block;
   margin-bottom: 8px;
-  font-weight: 500;
-  color: #475569;
-  font-size: 14px;
+  font-weight: 700; /* Texto de etiquetas más marcado */
+  color: #080808; /* Tono más oscuro para máxima legibilidad */
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
+
 .form-group input,
 .form-select {
   width: 100%;
-  padding: 12px;
+  padding: 12px 16px;
+  background-color: #ffffff !important; /* Forzamos fondo blanco limpio */
   border: 1px solid #cbd5e1;
-  border-radius: 8px;
-  font-size: 15px;
+  border-radius: 12px;
+  font-size: 14px;
+  color: #0f172a !important;
   box-sizing: border-box;
-  background-color: #fff;
-  transition: border-color 0.2s;
+  transition: all 0.2s ease;
 }
+
+.form-group input::placeholder {
+  color: #94a3b8;
+}
+
+/* Evitamos que el navegador pinte de gris o cambie el fondo al autocompletar */
+.form-group input:-webkit-autofill,
+.form-group input:-webkit-autofill:hover,
+.form-group input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 30px #ffffff inset !important;
+  -webkit-text-fill-color: #0f172a !important;
+}
+
 .form-group input:focus,
 .form-select:focus {
   outline: none;
-  border-color: #2563eb;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  /* Al enfocar, cambia a verde brillante del logo con un borde remarcado */
+  border-color: #16a34a;
+  box-shadow: 0 0 0 4px rgba(22, 163, 74, 0.25);
+  background-color: #f7f5f5;
 }
+
 .btn-primary {
   width: 100%;
-  padding: 12px;
-  background-color: #2563eb;
-  color: white;
+  padding: 14px;
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  color: #ffffff;
   border: none;
-  border-radius: 8px;
-  font-weight: 600;
+  border-radius: 12px;
+  font-weight: 800;
   font-size: 15px;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: all 0.2s ease;
   margin-top: 10px;
-  box-sizing: border-box;
+  box-shadow: 0 4px 14px rgba(34, 197, 94, 0.3);
 }
+
 .btn-primary:hover {
-  background-color: #1d4ed8;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(34, 197, 94, 0.4);
 }
-.btn-primary:disabled {
-  background-color: #93c5fd;
-  cursor: not-allowed;
-}
+
 .success-box {
   text-align: center;
-  color: #1e293b;
+  color: #0f172a;
 }
-.success-box h3 {
-  color: #16a34a;
+
+.success-icon {
+  font-size: 40px;
   margin-bottom: 12px;
 }
-.instruction {
-  font-size: 14px;
-  color: #64748b;
-  margin-top: 8px;
+
+.success-box h3 {
+  color: #16a34a;
+  margin-bottom: 10px;
+  font-size: 20px;
 }
+
+.instruction {
+  font-size: 13px;
+  color: #f4f5f5;
+  margin-top: 8px;
+  line-height: 1.5;
+}
+
 .error {
   color: #dc2626;
   margin-top: 14px;
-  font-size: 14px;
+  font-size: 13px;
   text-align: center;
-}
-.switch-link {
-  margin-top: 24px;
-  text-align: center;
-  font-size: 14px;
-  color: #64748b;
-}
-.switch-link a {
-  color: #2563eb;
-  text-decoration: none;
   font-weight: 500;
 }
+
+.switch-link {
+  margin-top: 20px;
+  text-align: center;
+  font-size: 14px;
+  color: #f4f6f9;
+}
+
+.switch-link a {
+  color: #16a34a;
+  text-decoration: none;
+  font-weight: 600;
+}
+
 .switch-link a:hover {
   text-decoration: underline;
 }

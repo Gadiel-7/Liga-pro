@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Auth\Notifications\ResetPassword;
 use Laravel\Sanctum\HasApiTokens;
 
 #[Fillable(['name', 'email', 'password'])]
@@ -30,5 +31,16 @@ class User extends Authenticatable implements MustVerifyEmail
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    /**
+     * Envía la notificación de restablecimiento de contraseña apuntando al frontend de Vue.
+     */
+    public function sendPasswordResetNotification($token)
+    {
+        // Cambia esta URL por la ruta exacta de tu vista de restablecimiento en Vue
+        $url = 'http://localhost:5173/reset-password?token=' . $token . '&email=' . urlencode($this->email);
+
+        $this->notify(new ResetPassword($url));
     }
 }

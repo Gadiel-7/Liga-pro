@@ -22,8 +22,8 @@
         <p
           class="text-slate-500 dark:text-slate-400 text-base mt-2 max-w-2xl font-normal leading-relaxed"
         >
-          Registra manualmente los partidos de la Jornada 1 y genera automáticamente el resto del
-          rol de juegos a partir de la Jornada 2.
+          Registra partidos individuales o genera automáticamente el rol completo de juegos desde la
+          Jornada 1 en adelante[cite: 11].
         </p>
       </div>
 
@@ -46,7 +46,7 @@
             class="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"
           ></span>
           <span v-else class="text-lg">⚡</span>
-          {{ generating ? 'Generando...' : 'Generar Rol Automático (J2+)' }}
+          {{ generating ? 'Generando...' : 'Generar Rol Completo (Desde J1)' }}
         </button>
       </div>
     </div>
@@ -77,8 +77,8 @@
       <p
         class="text-slate-500 dark:text-slate-400 text-base max-w-md mx-auto mb-8 font-normal leading-relaxed"
       >
-        Comienza registrando manualmente los encuentros de la Jornada 1 o genera el rol automático a
-        partir de la Jornada 2.
+        Comienza registrando encuentros manualmente o genera todo el rol automático desde la Jornada
+        1[cite: 11].
       </p>
     </div>
 
@@ -226,9 +226,7 @@
           ✕
         </button>
         <h2 class="text-2xl font-black mb-1">Registrar Partido</h2>
-        <p class="text-slate-500 text-xs mb-5">
-          Ideal para configurar manualmente los duelos de la Jornada 1.
-        </p>
+        <p class="text-slate-500 text-xs mb-5">Configura un duelo de forma manual en el torneo.</p>
 
         <form @submit.prevent="storeManualMatch" class="space-y-4">
           <div>
@@ -238,7 +236,7 @@
             <select
               v-model="manualForm.team_a_id"
               required
-              class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm"
+              class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-900 dark:text-white [&>option]:bg-white [&>option]:text-slate-900 dark:[&>option]:bg-slate-900 dark:[&>option]:text-white"
             >
               <option value="" disabled>Selecciona equipo...</option>
               <option v-for="t in leagueTeams" :key="t.id" :value="t.id">
@@ -254,7 +252,7 @@
             <select
               v-model="manualForm.team_b_id"
               required
-              class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm"
+              class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-900 dark:text-white [&>option]:bg-white [&>option]:text-slate-900 dark:[&>option]:bg-slate-900 dark:[&>option]:text-white"
             >
               <option value="" disabled>Selecciona equipo...</option>
               <option
@@ -269,13 +267,27 @@
 
           <div>
             <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5"
+              >Número de Jornada *</label
+            >
+            <input
+              v-model.number="manualForm.round"
+              type="number"
+              min="1"
+              required
+              class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-900 dark:text-white"
+              placeholder="Ej. 1, 2, 3..."
+            />
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5"
               >Fecha y Hora *</label
             >
             <input
               v-model="manualForm.date"
               type="datetime-local"
               required
-              class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm"
+              class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-900 dark:text-white"
             />
           </div>
 
@@ -287,7 +299,7 @@
               v-model="manualForm.location"
               type="text"
               placeholder="Campo Principal"
-              class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm"
+              class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-900 dark:text-white"
             />
           </div>
 
@@ -295,7 +307,7 @@
             <button
               type="button"
               @click="showCreateManualMatchModal = false"
-              class="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 cursor-pointer"
+              class="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-900 cursor-pointer"
             >
               Cancelar
             </button>
@@ -350,6 +362,7 @@ const manualForm = ref({
   team_b_id: '',
   date: '',
   location: 'Campo Principal',
+  round: '',
 })
 
 const getImageUrl = (logoPath: string | null): string => {
@@ -399,16 +412,29 @@ const fetchMatches = async () => {
 
 const storeManualMatch = async () => {
   try {
+    if (!activeLeagueId.value) {
+      alert('No se ha detectado el ID de la liga actual.')
+      return
+    }
+
     savingManual.value = true
     await api.post('/matches', {
+      league_id: activeLeagueId.value,
       team_a_id: manualForm.value.team_a_id,
       team_b_id: manualForm.value.team_b_id,
+      round: manualForm.value.round,
       date: manualForm.value.date.replace('T', ' ') + ':00',
       location: manualForm.value.location,
       status: 'scheduled',
     })
     showCreateManualMatchModal.value = false
-    manualForm.value = { team_a_id: '', team_b_id: '', date: '', location: 'Campo Principal' }
+    manualForm.value = {
+      team_a_id: '',
+      team_b_id: '',
+      date: '',
+      round: '',
+      location: 'Campo Principal',
+    }
     await fetchMatches()
   } catch (error: any) {
     alert(error.response?.data?.message || 'Error al registrar partido manual')
@@ -419,6 +445,11 @@ const storeManualMatch = async () => {
 
 const generateMatches = async () => {
   try {
+    if (!activeLeagueId.value) {
+      alert('No se ha detectado el ID de la liga actual.')
+      return
+    }
+
     generating.value = true
     const response = await api.post('/matches/generate', {
       league_id: activeLeagueId.value,
@@ -428,10 +459,14 @@ const generateMatches = async () => {
       roundsData.value = response.data.rounds
     }
 
-    alert(response.data.message || '¡Rol automático generado desde la Jornada 2 con éxito!')
+    alert(response.data.message || '¡Calendario generado con éxito desde la Jornada 1[cite: 11]!')
     await fetchMatches()
   } catch (error: any) {
-    alert(error.response?.data?.message || 'Error al generar el rol automático.')
+    const errorMsg =
+      error.response?.data?.message ||
+      error.response?.data?.errors?.league_id?.[0] ||
+      'Error al generar el rol automático.'
+    alert(errorMsg)
   } finally {
     generating.value = false
   }
@@ -459,9 +494,8 @@ const matchesByRound = computed(() => {
 
   const groups: { [key: string]: any[] } = {}
 
-  matches.value.forEach((m, index) => {
-    // Si no tienen jornada especificada, los agrupamos de 3 en 3 para la Jornada 1 manual
-    const roundKey = m.jornada || m.round || (index < 3 ? 1 : Math.floor((index - 3) / 3) + 2)
+  matches.value.forEach((m) => {
+    const roundKey = m.jornada || m.round || 1
     if (!groups[roundKey]) {
       groups[roundKey] = []
     }

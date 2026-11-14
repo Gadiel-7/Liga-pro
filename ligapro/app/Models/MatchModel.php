@@ -17,9 +17,10 @@ class MatchModel extends Model
         'team_b_id',
         'score_a',
         'score_b',
-        'status', 
+        'status',
         'date',
         'location',
+        'league_id',
     ];
 
     public function teamA()
@@ -36,4 +37,9 @@ class MatchModel extends Model
     {
         return $this->hasMany(MatchEvent::class, 'match_id');
     }
+
+    public function league()
+   {
+    return $this->belongsTo(League::class, 'league_id');
+   }
 }

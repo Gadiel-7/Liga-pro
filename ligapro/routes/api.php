@@ -14,8 +14,8 @@ use Illuminate\Support\Facades\Route;
 // --- 1. Rutas de Autenticación
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
+Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
 
-// Rutas de Verificación de Correo (Hash opcional para evitar bloqueos por parámetros)
 Route::get('/email/verify/{id}/{hash?}', [AuthController::class, 'verifyEmail'])
     ->name('verification.verify');
 
@@ -23,11 +23,14 @@ Route::post('/email/resend', [AuthController::class, 'resendVerificationEmail'])
     ->middleware(['auth:sanctum'])
     ->name('verification.send');
 
-// --- 2. Rutas de Consulta Públicas
+// --- 2. Rutas de Consulta Públicas / Aficionado (Solo lectura)
 Route::get('/teams', [TeamController::class, 'index']);
 Route::get('/teams/{team}', [TeamController::class, 'show']);
 
+// Endpoints de lectura general para partidos (compartidos entre admin y aficionado)
 Route::get('/matches', [MatchController::class, 'index']);
+Route::get('/aficionado/matches', [MatchController::class, 'index']);
+
 Route::get('/matches/{match}', [MatchController::class, 'show']);
 Route::get('/standings', [StandingsController::class, 'index']);
 Route::get('/players', [PlayerController::class, 'index']);
@@ -40,7 +43,7 @@ Route::get('/categories/{category}', [CategoryController::class, 'show']);
 Route::get('/leagues', [LeagueController::class, 'index']);
 Route::get('/leagues/{league}', [LeagueController::class, 'show']);
 
-// --- 3. Rutas Protegidas (Requieren Login y Correo Verificado)
+// --- 3. Rutas Protegidas (Administración y Escritura)
 Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
 
@@ -48,6 +51,7 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     Route::get('/my-league', [LeagueController::class, 'myLeague']);
 
     Route::middleware('role:admin')->group(function () {
+        Route::get('/admin/matches', [MatchController::class, 'index']);
         Route::post('/teams', [TeamController::class, 'store']);
         Route::put('/teams/{team}', [TeamController::class, 'update']);
         Route::delete('/teams/{team}', [TeamController::class, 'destroy']);
